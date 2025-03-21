@@ -18,3 +18,18 @@ backend.convertTextToSpeech.resources.lambda.addToRolePolicy(
     resources: ["*"],
   })
 );
+
+new PolicyStatement({
+  actions: ["polly:SynthesizeSpeech"],
+  resources: ["*"],
+  conditions: {
+    // Optional: Restrict to specific voices
+    StringEquals: {
+      "polly:VoiceId": ["Joanna", "Matthew"],
+    },
+    // Optional: Add rate limiting
+    NumericLessThanEquals: {
+      "polly:RequestCharacters": 3000,
+    },
+  },
+});
