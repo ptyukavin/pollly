@@ -1,39 +1,45 @@
-import { useEffect, useState } from "react";
+import "./App.css";
+import { generateClient } from "aws-amplify/api";
 import type { Schema } from "../amplify/data/resource";
-import { generateClient } from "aws-amplify/data";
+import { getUrl } from "aws-amplify/storage";
+import { useState } from "react";
 
 const client = generateClient<Schema>();
 
+type PollyReturnType = Schema["convertTextToSpeech"]["returnType"];
+
 function App() {
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
-
-  useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
-  }, []);
-
-  function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
-  }
-
+  const [src, setSrc] = useState("");
+  const [file, setFile] = useState<PollyReturnType>("");
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => (
-          <li key={todo.id}>{todo.content}</li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
-      </div>
-    </main>
+    <div className="flex flex-col">
+      <button
+        onClick={async () => {
+          const { data, errors } = await client.mutations.convertTextToSpeech({
+            text: "Hello World!",
+          });
+
+          if (!errors && data) {
+            setFile(data);
+          } else {
+            console.log(errors);
+          }
+        }}
+      >
+        Synth
+      </button>
+      <button
+        onClick={async () => {
+          const res = await getUrl({
+            path: "public/" + file,
+          });
+          setSrc(res.url.toString());
+        }}
+      >
+        Fetch audio
+      </button>
+      <a href={src}>Get audio file</a>
+    </div>
   );
 }
 
